@@ -1,0 +1,34 @@
+name: Build and Push Docker Image for AARCH64
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [amd64, x86_64]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Setup Go
+      run: |
+        export GOARCH=${arch}
+        export GOOS=linux
+        export CGO_ENABLED=0
+
+    - name: Build the Docker image
+      run: |
+        go build -o main
+        docker build --build-arg ARCH=${arch} -t wadghulegaurav/go-rest-api:${arch} .
+
+    - name: Login to Docker Hub
+      run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+
+    - name: Push the Docker image
+      run: docker push wadghulegaurav/go-rest-api:${arch}
